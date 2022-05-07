@@ -56,7 +56,7 @@ else:
     CWD = os.getcwd()
 
 try:
-    f = open("canvas_token.txt", 'rb')
+    f = open("canvas_token.txt", 'r')
     API_KEY = f.readline()
     f.close()
 
