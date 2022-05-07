@@ -188,12 +188,14 @@ for the_assignment in assignments:
         print("Grade:", grade)
         print("Comment:", canvas_comment)
 
-        maybe_wait = input("Is this correct? Hit enter for yes, anything else for no. ")
-        if maybe_wait != "":
+        maybe_wait = input("Is this correct? Hit enter for yes, type s to skip, anything else to quit. ")
+        if maybe_wait == "s":
+            continue
+        elif maybe_wait != "":
             quit()
 
         # TEMPORARY TEST STUDENT
-        student_id = 211292
+        #student_id = 211292
 
         the_submission = the_assignment.get_submission(student_id)
 
