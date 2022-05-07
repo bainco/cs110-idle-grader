@@ -2,9 +2,10 @@ from subprocess import Popen, PIPE
 import os, re, shutil, sys, zipfile
 
 GRADER_HEADER = r"""GRADE=0.0\n"""
-COMMENT_HEADER = r"""CANVAS_COMMENT=\"\"\"
+
+COMMENT_HEADER = r'''CANVAS_COMMENT="""
 Write your comment starting here
-\"\"\"\n"""
+"""\n'''
 
 GRADE_END = r"""#### END GRADE HEADER ####\n"""
 
