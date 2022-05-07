@@ -1,12 +1,12 @@
 from subprocess import Popen, PIPE
 import os, re, shutil, sys, zipfile
 
-GRADER_HEADER = "GRADE=0.0\n"
+GRADER_HEADER = """GRADE=0.0\n"""
 COMMENT_HEADER = """CANVAS_COMMENT=\"\"\"
 Write your comment starting here
 \"\"\"\n"""
 
-GRADE_END = "#### END GRADE HEADER ####\n"
+GRADE_END = """#### END GRADE HEADER ####\n"""
 
 PYTHON_PATH = sys.executable
 
@@ -192,7 +192,7 @@ for the_assignment in assignments:
             quit()
 
         # TEMPORARY TEST STUDENT
-        #student_id = 211292
+        student_id = 211292
 
         the_submission = the_assignment.get_submission(student_id)
 
