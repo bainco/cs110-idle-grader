@@ -1,13 +1,13 @@
 from subprocess import Popen, PIPE
 import os, re, shutil, sys, zipfile
 
-GRADER_HEADER = r"""GRADE=0.0\n"""
+GRADER_HEADER = """GRADE=0.0\n"""
 
-COMMENT_HEADER = r'''CANVAS_COMMENT="""
+COMMENT_HEADER = '''CANVAS_COMMENT="""
 Write your comment starting here
 """\n'''
 
-GRADE_END = r"""#### END GRADE HEADER ####\n"""
+GRADE_END = """#### END GRADE HEADER ####\n"""
 
 PYTHON_PATH = sys.executable
 
@@ -142,7 +142,7 @@ for the_assignment in assignments:
 
     for download in subfolders:
         os.chdir(download)
-        name_header = "NAME = \"" + "-".join(download.split("/")[-1].split("_")[0:2]) + "\"\n"
+        name_header = 'NAME = "' + "-".join(download.split(os.sep)[-1].split("_")[0:2]) + '"\n'
         # Add grade header
         with open(file_to_grade, 'r+') as file:
             content = file.read()
