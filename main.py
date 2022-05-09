@@ -1,38 +1,7 @@
 from subprocess import Popen, PIPE
-import os, re, shutil, sys, zipfile
+import os, re, sys, zipfile, pip, shutil
 
-GRADER_HEADER = """GRADE=0.0\n"""
-
-COMMENT_HEADER = '''CANVAS_COMMENT="""
-Write your comment starting here
-"""\n'''
-
-GRADE_END = """#### END GRADE HEADER ####\n"""
-
-PYTHON_PATH = sys.executable
-
-def flatten(directory):
-    for dirpath, _, filenames in os.walk(directory, topdown=False):
-        for filename in filenames:
-            i = 0
-            source = os.path.join(dirpath, filename)
-            target = os.path.join(directory, filename)
-
-            while os.path.exists(target):
-                i += 1
-                file_parts = os.path.splitext(os.path.basename(filename))
-
-                target = os.path.join(
-                    directory,
-                    file_parts[0] + "_" + str(i) + file_parts[1],
-                )
-
-            shutil.move(source, target)
-
-        if dirpath != directory:
-            os.rmdir(dirpath)
-
-import pip
+import utilities, headers, course_data
 
 try:
     canvasapi = __import__("canvasapi")
@@ -51,7 +20,7 @@ if len(CWD) > 0:
     try:
         os.chdir(CWD)
     except:
-        print("That's not a valid directory. Try again later.")
+        print("That's not a valid directory. Exiting.")
         quit()
 else:
     CWD = os.getcwd()
@@ -62,21 +31,21 @@ try:
     f.close()
 
 except OSError:
-    print("no existing token found.")
+    print("No existing CANVAS API token found.")
+    print("Instructions to make one can be found here https://community.canvaslms.com/docs/DOC-16005-42121018197")
     API_KEY = input("please paste your canvas token here: ")
-    if len(API_KEY) < 20:
-        print("INVALID TOKEN. Please contact Connor")
-        quit()
+
+try:
+    canvas = canvasapi.Canvas(course_data.API_URL, API_KEY)
     text_file = open("canvas_token.txt", "wt")
     text_file.write(API_KEY)
     text_file.close()
+except:
+    print("INVALID TOKEN. Please contact Connor.")
+    quit()
 
-# Canvas API URL
-API_URL = "https://canvas.northwestern.edu/"
-CANVAS_COURSE_ID = 165750
 # Initialize a new Canvas object
-canvas = canvasapi.Canvas(API_URL, API_KEY)
-current_course = canvas.get_course(CANVAS_COURSE_ID)
+current_course = canvas.get_course(course_data.CANVAS_COURSE_ID)
 
 pm_name = input("What's your first name? (e.g. Connor) ")
 pm_name = pm_name.capitalize()
@@ -96,21 +65,17 @@ for the_assignment in assignments:
                 if the_submission.workflow_state in ["submitted", "pending_review"]:
                     submissions.append(the_submission)
 
-
     os.chdir(CWD)
-    clean_name = re.sub(r"[^a-zA-Z0-9]","",the_assignment.name)
+    clean_name = re.sub(r"[^a-zA-Z0-9]", "", the_assignment.name)
 
     try:
         os.mkdir(clean_name)
     except:
-        import shutil
         print("folder already existed...deleting")
         shutil.rmtree(clean_name)
         os.mkdir(clean_name)
 
     os.chdir(clean_name)
-    ASSIGNMENT_CWD = os.getcwd()
-
     for sub in submissions:
         the_student = current_course.get_user(sub.user_id)
         if hasattr(sub, "attachments"):
@@ -122,58 +87,47 @@ for the_assignment in assignments:
         else:
             print("This student does not have any attachments for this assignment.", the_student.name, the_student.sis_user_id)
 
-    subfolders = [ f.path for f in os.scandir(ASSIGNMENT_CWD) if f.is_dir() ]
+    subfolders = [f.path for f in os.scandir(os.getcwd()) if f.is_dir()]
 
     # Flatten all folders in case students do something funky
     for directory in subfolders:
-        flatten(directory)
+        utilities.flatten(directory)
 
-    ASSIGNMENT_DATA = {
-        "homework 4": {
-            'files_to_run': ['main.py'],
-            'file_to_grade': 'main.py',
-            'other_files_to_open': []
-        }
-    }
-
-    files_to_run = ASSIGNMENT_DATA[assignment_name.lower()]['files_to_run']
-    file_to_grade = ASSIGNMENT_DATA[assignment_name.lower()]['file_to_grade']
-    files_to_comment = ASSIGNMENT_DATA[assignment_name.lower()]['other_files_to_open']
+    (files_to_run, file_to_grade, files_to_comment) = course_data.get_file_spec(assignment_name)
 
     for download in subfolders:
         os.chdir(download)
-        name_header = 'NAME = "' + "-".join(download.split(os.sep)[-1].split("_")[0:2]) + '"\n'
+
         # Add grade header
         with open(file_to_grade, 'r+') as file:
             content = file.read()
             file.seek(0)
-            file.write(name_header + GRADER_HEADER + COMMENT_HEADER + GRADE_END + content)
+            file.write(headers.generate_grading_header(download))
 
         runners = []
         for file in files_to_run:
-            runners.append(Popen([PYTHON_PATH, "-m", "idlelib", "-r", file], stdout=PIPE, stderr=PIPE))
+            runners.append(Popen([sys.executable, "-m", "idlelib", "-r", file], stdout=PIPE, stderr=PIPE))
 
         editors = []
         for file in [file_to_grade] + files_to_comment:
-            editors.append(Popen([PYTHON_PATH, "-m", "idlelib", "-e", file]))
+            editors.append(Popen([sys.executable, "-m", "idlelib", "-e", file]))
 
         exit_codes = [p.wait() for p in runners + editors]
 
-        print(download, "finished grading")
+        print(download, "finished grading assignment", download)
 
         with open(file_to_grade) as myfile:
             grade_head = []
             for line in myfile.readlines():
                 grade_head.append(line)
-                if line == GRADE_END:
+                if line == headers.GRADE_END:
                     break
 
-        #print(grade_head)
-
         grade = float(grade_head[1].split("=")[-1].replace("\n", ""))
+
         comment = []
         i = 3
-        while grade_head[i] != GRADE_END:
+        while grade_head[i] != headers.GRADE_END:
             comment.append(grade_head[i])
             i += 1
 
@@ -194,20 +148,18 @@ for the_assignment in assignments:
         elif maybe_wait != "":
             quit()
 
-        # TEMPORARY TEST STUDENT
+        # TEMPORARY TEST STUDENT (Uncomment if you want )
         #student_id = 211292
 
         the_submission = the_assignment.get_submission(student_id)
 
-        #### POSTING TEXT COMMENTS AND GRADES
-        comment_json = {"text_comment": canvas_comment}
-        the_submission.edit(submission={'posted_grade': grade}, comment=comment_json)
-        ## UPLOADING FILES AS COMMENTS (can't also upload text)
+        #### POSTING TEXT COMMENTS, GRADE, and FILE
+        the_submission.edit(submission={'posted_grade': grade}, comment={"text_comment": canvas_comment})
         the_submission.upload_comment(open(file_to_grade, 'rb'))
 
         ### VERIFY
         print("Please verify correct submission at the following link:")
-        print("https://canvas.northwestern.edu/courses/{}/gradebook/speed_grader?assignment_id={}&student_id={}\n".format(CANVAS_COURSE_ID,the_assignment.id,student_id))
+        print(utilities.gen_sg_link(course_data.CANVAS_COURSE_ID, the_assignment.id, student_id))
 
         maybe_wait = input("Continue? Hit enter for yes, anything else for no. ")
         if maybe_wait != "":
