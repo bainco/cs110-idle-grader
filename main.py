@@ -1,7 +1,7 @@
 from subprocess import Popen, PIPE
 import os, re, sys, zipfile, pip, shutil
 
-import utilities, headers, course_data
+import utilities, formatter, course_data
 
 try:
     canvasapi = __import__("canvasapi")
@@ -87,11 +87,7 @@ for the_assignment in assignments:
         else:
             print("This student does not have any attachments for this assignment.", the_student.name, the_student.sis_user_id)
 
-    subfolders = [f.path for f in os.scandir(os.getcwd()) if f.is_dir()]
-
-    # Flatten all folders in case students do something funky
-    for directory in subfolders:
-        utilities.flatten(directory)
+    subfolders = utilities.flatten_all_directories(os.getcwd())
 
     (files_to_run, file_to_grade, files_to_comment) = course_data.get_file_spec(assignment_name)
 
@@ -102,7 +98,7 @@ for the_assignment in assignments:
         with open(file_to_grade, 'r+') as file:
             content = file.read()
             file.seek(0)
-            file.write(headers.generate_grading_header(download))
+            file.write(formatter.generate_grading_header(download))
 
         runners = []
         for file in files_to_run:
@@ -120,14 +116,14 @@ for the_assignment in assignments:
             grade_head = []
             for line in myfile.readlines():
                 grade_head.append(line)
-                if line == headers.GRADE_END:
+                if line == formatter.GRADE_END:
                     break
 
         grade = float(grade_head[1].split("=")[-1].replace("\n", ""))
 
         comment = []
         i = 3
-        while grade_head[i] != headers.GRADE_END:
+        while grade_head[i] != formatter.GRADE_END:
             comment.append(grade_head[i])
             i += 1
 
@@ -136,11 +132,7 @@ for the_assignment in assignments:
 
         student_id = int(download.split("_")[-2])
 
-        print("\n\n\n\n\nVERIFCATION STAGE:")
-        print("Here's the input I read from the file:")
-        print("Results for:", student_id)
-        print("Grade:", grade)
-        print("Comment:", canvas_comment)
+        formatter.print_verifier(student_id, grade, canvas_comment)
 
         maybe_wait = input("Is this correct? Hit enter for yes, type s to skip, anything else to quit. ")
         if maybe_wait == "s":

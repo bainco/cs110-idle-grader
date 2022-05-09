@@ -10,6 +10,7 @@ FILE_SPEC = {
   }
 }
 
+
 def get_file_spec(a_name:str):
     a_name = a_name.lower()
     files_to_run = FILE_SPEC[a_name]['files_to_run']

@@ -21,5 +21,13 @@ def flatten(directory):
         if dirpath != directory:
             os.rmdir(dirpath)
 
+def flatten_all_directories(the_folder):
+    subfolders = [f.path for f in os.scandir(the_folder) if f.is_dir()]
+    # Flatten all folders in case students do something funky
+    for directory in subfolders:
+        flatten(directory)
+
+    return subfolders
+
 def gen_sg_link(cid:int, aid:int, sid:int):
     return "https://canvas.northwestern.edu/courses/{}/gradebook/speed_grader?assignment_id={}&student_id={}\n".format(cid, aid, sid)
