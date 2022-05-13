@@ -98,7 +98,7 @@ for the_assignment in assignments:
         with open(file_to_grade, 'r+') as file:
             content = file.read()
             file.seek(0)
-            file.write(formatter.generate_grading_header(download))
+            file.write(formatter.generate_grading_header(download) + content)
 
         runners = []
         for file in files_to_run:
