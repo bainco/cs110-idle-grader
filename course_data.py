@@ -12,6 +12,11 @@ FILE_SPEC = {
       'files_to_run': ['01_mouse_events.py', '02_keyboard_events.py'],
       'file_to_grade': '01_mouse_events.py',
       'other_files_to_open': ['02_keyboard_events.py']
+  },
+  "tutorial 7": {
+      'files_to_run': ['q1.py','q2.py','q3.py','q4.py'],
+      'file_to_grade': 'q1.py',
+      'other_files_to_open': ['q2.py','q3.py','q4.py']
   }
 }
 
