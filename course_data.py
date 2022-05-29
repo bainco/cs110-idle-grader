@@ -22,6 +22,11 @@ FILE_SPEC = {
       'files_to_run': ['main.py'],
       'file_to_grade': 'main.py',
       'other_files_to_open': ['landscape.py', 'creature.py']
+  },
+  "homework 5": {
+    'files_to_run': ['wordle.py'],
+    'file_to_grade': 'wordle.py',
+    'other_files_to_open': []
   }
 }
 
